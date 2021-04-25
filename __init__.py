@@ -41,7 +41,7 @@ class nginxRTMPMonitor(Skill):
             await self.opsdroid.send(
                 Message(
                     text=msg,
-                    target=self.config.get('room_test')
+                    target=self.config.get('room_notify')
                 )
             )
             self.bot_was_last_message = True
@@ -78,6 +78,7 @@ class nginxRTMPMonitor(Skill):
                     target=self.config.get('room_notify')
                 )
             )
+
             self.bot_thinks_stream_is_up = True
             self.stream_since_when = datetime.datetime.today()
         elif data['stream_state_change'] == 'stop':
