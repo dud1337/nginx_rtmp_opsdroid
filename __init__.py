@@ -50,7 +50,8 @@ class nginxRTMPMonitor(Skill):
 
     @match_always
     async def who_last_said(self, event):
-        self.bot_was_last_message = False
+        if event.target == self.config.get('room_notify'):
+            self.bot_was_last_message = False
 
 
     ##################################################################
