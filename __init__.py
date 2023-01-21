@@ -23,6 +23,7 @@ class nginxRTMPMonitor(Skill):
         self.bot_thinks_stream_is_up = self.check_stream_status()
 
         if self.bot_thinks_stream_is_up:
+            # assume stream started an hour ago to force notification
             self.stream_since_when = datetime.datetime.today() - datetime.timedelta(hours=1)
         else:
             self.stream_since_when = False
@@ -50,7 +51,7 @@ class nginxRTMPMonitor(Skill):
 
     @match_always
     async def who_last_said(self, event):
-        if event.target == self.config.get('room_notify'):
+        if hasattr(event, 'target') and event.target == self.config.get('room_notify'):
             self.bot_was_last_message = False
 
 
@@ -61,7 +62,11 @@ class nginxRTMPMonitor(Skill):
     #
     ##################################################################
     def check_stream_status(self):
-        return bool(int(requests.get(self.config.get('stream_status_url')).text[0]))
+        try:
+            status = bool(int(requests.get(self.config.get('stream_status_url')).text[0]))
+        else: # if the stream isn't up yet, the URL can break the int and bool requirement
+            status = False
+        return status
 
     def take_stream_screenshot(self):
         pass
@@ -79,6 +84,7 @@ class nginxRTMPMonitor(Skill):
                 )
             )
 
+            self.bot_was_last_message = True
             self.bot_thinks_stream_is_up = True
             self.stream_since_when = datetime.datetime.today()
         elif data['stream_state_change'] == 'stop':
@@ -88,6 +94,7 @@ class nginxRTMPMonitor(Skill):
                     target=self.config.get('room_notify')
                 )
             )
+            self.bot_was_last_message = True
             self.bot_thinks_stream_is_up = False
             self.stream_since_when = False
 
@@ -100,4 +107,6 @@ class nginxRTMPMonitor(Skill):
                     await self.avoid_spam_send(
                         '<h1>⚡️ <a href="' + self.config.get('stream_url') + '">STREAMIN\'</a> ⚡️</h1>'
                     )
-                self.stream_since_when = datetime.datetime.today()
+                    self.stream_since_when = datetime.datetime.today()
+            else:
+                self.bot_thinks_stream_is_up = False
