@@ -64,7 +64,7 @@ class nginxRTMPMonitor(Skill):
     def check_stream_status(self):
         try:
             status = bool(int(requests.get(self.config.get('stream_status_url')).text[0]))
-        else: # if the stream isn't up yet, the URL can break the int and bool requirement
+        except: # if the stream isn't up yet, the URL can break the int and bool requirement
             status = False
         return status
 
