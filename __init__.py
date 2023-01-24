@@ -19,6 +19,7 @@ class nginxRTMPMonitor(Skill):
     def __init__(self, *args, **kwargs):
         super(nginxRTMPMonitor, self).__init__(*args, **kwargs)
         self.bot_was_last_message = False
+        self.last_message = datetime.datetime.today()
 
         self.bot_thinks_stream_is_up = self.check_stream_status()
 
@@ -76,6 +77,10 @@ class nginxRTMPMonitor(Skill):
         # Capture the post data
         data = await event.json()
 
+        # If an OBS connection can be shakey, it can result in spam. Disallow too many updates.
+        if datetime.datetime.today() - self.last_hook_update < datetime.timedelta(seconds=10):
+            return
+
         if data['stream_state_change'] == 'start':
             await self.opsdroid.send(
                 Message(
@@ -97,6 +102,8 @@ class nginxRTMPMonitor(Skill):
             self.bot_was_last_message = True
             self.bot_thinks_stream_is_up = False
             self.stream_since_when = False
+
+        self.last_hook_update = datetime.datetime.today()
 
     @match_crontab('* * * * *', timezone="Europe/Zurich")
     async def stream_ongoing(self, event):
